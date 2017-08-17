@@ -2955,7 +2955,18 @@
 		// Start content in the current background
 		if( currentBackground ) {
 
-			startEmbeddedContent( currentBackground );
+      // Detect identical backgrounds.
+			var previousBackgroundHash = previousBackground ? previousBackground.getAttribute( 'data-background-hash' ) : null;
+			var currentBackgroundHash = currentBackground.getAttribute( 'data-background-hash' );
+			if( currentBackgroundHash && currentBackgroundHash === previousBackgroundHash && currentBackground !== previousBackground ) {
+        // Don't transition between identical backgrounds. This
+        // prevents unwanted flicker.
+				dom.background.classList.add( 'no-transition' );
+        startEmbeddedContent( currentBackground, 100);
+			}
+      else {
+        startEmbeddedContent( currentBackground );
+      }
 
 			var backgroundImageURL = currentBackground.style.backgroundImage || '';
 
@@ -2966,10 +2977,6 @@
 				currentBackground.style.backgroundImage = backgroundImageURL;
 			}
 
-			// Don't transition between identical backgrounds. This
-			// prevents unwanted flicker.
-			var previousBackgroundHash = previousBackground ? previousBackground.getAttribute( 'data-background-hash' ) : null;
-			var currentBackgroundHash = currentBackground.getAttribute( 'data-background-hash' );
 			if( currentBackgroundHash && currentBackgroundHash === previousBackgroundHash && currentBackground !== previousBackground ) {
 				dom.background.classList.add( 'no-transition' );
 			}
@@ -3275,7 +3282,7 @@
 	 *
 	 * @param {HTMLElement} element
 	 */
-	function startEmbeddedContent( element ) {
+	function startEmbeddedContent( element, time=0 ) {
 
 		if( element && !isSpeakerNotes() ) {
 
@@ -3304,7 +3311,7 @@
 				if( autoplay && typeof el.play === 'function' ) {
 
 					if( el.readyState > 1 ) {
-						startEmbeddedMedia( { target: el } );
+						startEmbeddedMedia( { target: el }, time );
 					}
 					else {
 						el.removeEventListener( 'loadeddata', startEmbeddedMedia ); // remove first to avoid dupes
@@ -3346,13 +3353,13 @@
 	 *
 	 * @param {object} event
 	 */
-	function startEmbeddedMedia( event ) {
+	function startEmbeddedMedia( event, time=0 ) {
 
 		var isAttachedToDOM = !!closestParent( event.target, 'html' ),
 			isVisible  		= !!closestParent( event.target, '.present' );
 
 		if( isAttachedToDOM && isVisible ) {
-			event.target.currentTime = 0;
+			event.target.currentTime = time;
 			event.target.play();
 		}
 
